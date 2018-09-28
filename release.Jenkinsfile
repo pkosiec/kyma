@@ -147,9 +147,15 @@ try {
                         sh "tar -czf ${zip} ./installation ./resources"
 
                         // create release on github
-                        withCredentials([string(credentialsId: 'public-github-token', variable: 'token')]) {
-                            // TODO add changelog as "body"
-                            def data = "'{\"tag_name\": \"${appVersion}\",\"target_commitish\": \"${commitID}\",\"name\": \"${appVersion}\",\"body\": \"Release ${appVersion}\",\"draft\": false,\"prerelease\": ${isRelease ? 'false' : 'true'}}'"
+                        withCredentials(
+                                [string(credentialsId: 'public-github-token', variable: 'token'),
+                                sshUserPrivateKey(credentialsId: "bitbucket-rw", keyFileVariable: 'sshfile')
+                            ]) {
+                            // Generate release changelog
+                            changelogGenerator('/app/generate-release-changelog.sh', ["APP_PATH=/app", "LATEST_VERSION=${appVersion}", "GITHUB_AUTH=${token}", "SSH_FILE=${sshfile}"])
+                            def releaseChangelog = sh (script: 'cat ./.changelog/release-changelog.md', returnStdout: true)
+
+                            def data = "'{\"tag_name\": \"${appVersion}\",\"target_commitish\": \"${commitID}\",\"name\": \"${appVersion}\",\"body\": \"${releaseChangelog}\",\"draft\": false,\"prerelease\": ${isRelease ? 'false' : 'true'}}'"
                             def json = sh (script: "curl --data ${data} -H \"Authorization: token $token\" https://api.github.com/repos/kyma-project/kyma/releases", returnStdout: true)
                             def releaseID = getGithubReleaseID(json)
 
@@ -157,6 +163,10 @@ try {
                             sh "curl --data-binary @$zip -H \"Authorization: token $token\" -H \"Content-Type: application/zip\" https://uploads.github.com/repos/kyma-project/kyma/releases/${releaseID}/assets?name=${zip}"
                             // upload versions-overrides env file
                             sh "curl --data-binary @installation/versions-overrides.env -H \"Authorization: token $token\" -H \"Content-Type: text/plain\" https://uploads.github.com/repos/kyma-project/kyma/releases/${releaseID}/assets?name=${appVersion}.env"
+                            
+                            // Generate CHANGELOG.md
+                            changelogGenerator('/app/generate-full-changelog.sh', ["APP_PATH=/app", "LATEST_VERSION=${appVersion}", "GITHUB_AUTH=${token}", "SSH_FILE=${sshfile}"])
+                            sh "./tools/changelog-generator/push-full-changelog.sh ${sshfile} --configure-git"
                         }
                     }
 
@@ -290,4 +300,19 @@ global.test_logging.dir=${dockerPushRoot}
 """
 
     return "$overrides"
+}
+
+def changelogGenerator(command, envs = []) {
+    def repositoryName = 'kyma'
+    def image = 'changelog-generator:0.0.1'
+    def envText = ''
+    for (it in envs) {
+        envText = "$envText --env $it"
+    }
+    workDir = pwd()
+
+    // TODO: Replace that
+    // def dockerRegistry = env.DOCKER_REGISTRY
+    def dockerRegistry = "eu.gcr.io/kyma-project/"
+    sh "docker run --rm -v $workDir:/$repositoryName -w /$repositoryName $envText ${dockerRegistry}$image sh $command"
 }

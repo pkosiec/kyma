@@ -1,0 +1,32 @@
+{
+  "name": "changelog-generator",
+  "version": "0.1.0",
+  "description": "Changelog Generator",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kyma-project/kyma"
+  },
+  "changelog": {
+    "repo": "kyma-project/kyma",
+    "labels": {
+      "area/application-connector": "Application Connector",
+      "area/ci": "CI",
+      "area/cluster": "Cluster",
+      "area/community": "Community",
+      "area/console": "Console",
+      "area/documentation": "Documentation",
+      "area/eventing": "Eventing",
+      "area/installation": "Installation",
+      "area/logging": "Logging",
+      "area/luigi": "Luigi",
+      "area/monitoring": "Monitoring",
+      "area/security": "Security",
+      "area/serverless": "Serverless",
+      "area/service-catalog": "Service Catalog",
+      "area/service-mesh": "Service Mesh",
+      "area/tracing": "Tracing"
+    },
+    "cacheDir": ".changelog"
+  }
+}
