@@ -77,6 +77,8 @@ func (r *PluggableResolver) Enable() error {
 	r.stopCh = make(chan struct{})
 	params := r.params
 
+
+	// TODO: Move client, clienset initialization to constructor
 	client, err := v1.NewForConfig(params.restConfig)
 	if err != nil {
 		return errors.Wrap(err, "while creating K8S Client")
@@ -97,6 +99,8 @@ func (r *PluggableResolver) Enable() error {
 		informerFactory.Apps().V1().ReplicaSets().Informer(), informerFactory.Apps().V1().StatefulSets().Informer(), client)
 	resourceQuotaStatusService := newResourceQuotaStatusService(resourceQuotaService, resourceQuotaService, resourceQuotaService, limitRangeService)
 
+	// TODO: Run this block in goroutine - after cache sync replace implementation
+	r.WaitForCacheSync()
 	r.Resolver = &k8sResolver{
 		environmentResolver:         newEnvironmentResolver(environmentService),
 		secretResolver:              newSecretResolver(client),
@@ -106,8 +110,6 @@ func (r *PluggableResolver) Enable() error {
 		resourceQuotaStatusResolver: newResourceQuotaStatusResolver(resourceQuotaStatusService),
 		informerFactory:             informerFactory,
 	}
-
-	r.WaitForCacheSync()
 
 	return nil
 }
@@ -121,6 +123,7 @@ func (r *PluggableResolver) Disable() error {
 	close(r.stopCh)
 
 	// Replace with generated "disabled" k8sResolver
+	// TODO: Make able to pass custom error to the generated "Disabled" resolver
 	r.Resolver = &disabled.Resolver{}
 
 	return nil
