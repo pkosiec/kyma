@@ -70,8 +70,8 @@ global:
     dir: develop/
     version: "4ad2e460"
   ui_api_layer_acceptance_tests:
-    dir: develop/
-    version: "4ad2e460"
+    dir: pr/ # TODO: Change it before merge
+    version: "PR-2928" # TODO: Change it before merge
   cluster_users_test:
     dir: develop/
     version: "d4937a42"
