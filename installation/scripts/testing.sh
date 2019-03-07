@@ -31,10 +31,7 @@ echo "----------------------------"
 echo "- Testing Kyma..."
 echo "----------------------------"
 
-echo "- Testing Core components..."
-# timeout set to 10 minutes
-helm test core --timeout 600
-coreTestErr=$?
+coreTestErr=0
 
 # execute assetstore tests if 'assetstore' is installed
 if helm list | grep -q "assetstore"; then
