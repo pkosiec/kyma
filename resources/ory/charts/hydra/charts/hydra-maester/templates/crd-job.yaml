@@ -18,6 +18,8 @@ spec:
       containers:
       - name: {{ .Release.Name }}-crd-oauth2clients
         image: "{{ .Values.rbacJob.image.repository }}:{{ .Values.rbacJob.image.tag }}"
+        securityContext:
+          runAsUser: 2000
         volumeMounts:
         - name: crd-oauth2clients
           mountPath: /etc/crd
